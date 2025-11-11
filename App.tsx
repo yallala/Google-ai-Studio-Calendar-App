@@ -16,7 +16,12 @@ const App: React.FC = () => {
 
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const savedCurrentUser = localStorage.getItem('familyCalendarCurrentUser');
-    return savedCurrentUser ? JSON.parse(savedCurrentUser) : users[0];
+    if (savedCurrentUser) {
+        return JSON.parse(savedCurrentUser);
+    }
+    // If no current user, default to the first user from the list
+    const userList = localStorage.getItem('familyCalendarUsers');
+    return userList ? JSON.parse(userList)[0] : SEED_USERS[0];
   });
   
   const [events, setEvents] = useState<CalendarEvent[]>(() => {

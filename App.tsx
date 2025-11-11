@@ -1,34 +1,32 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { CalendarEvent, EventType, User } from './types';
-import Calendar from './components/Calendar';
-import Header from './components/Header';
-import AddEventModal from './components/AddEventModal';
-import { EVENT_TYPE_COLORS, USERS as SEED_USERS, INITIAL_EVENTS as SEED_EVENTS } from './constants';
-import UserManagementModal from './components/UserManagementModal';
+import { EventType } from './types.js';
+import Calendar from './components/Calendar.js';
+import Header from './components/Header.js';
+import AddEventModal from './components/AddEventModal.js';
+import { EVENT_TYPE_COLORS, USERS as SEED_USERS, INITIAL_EVENTS as SEED_EVENTS } from './constants.js';
+import UserManagementModal from './components/UserManagementModal.js';
 
-const App: React.FC = () => {
+const App = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const [users, setUsers] = useState<User[]>(() => {
+  const [users, setUsers] = useState(() => {
     const savedUsers = localStorage.getItem('familyCalendarUsers');
     return savedUsers ? JSON.parse(savedUsers) : SEED_USERS;
   });
 
-  const [currentUser, setCurrentUser] = useState<User>(() => {
+  const [currentUser, setCurrentUser] = useState(() => {
     const savedCurrentUser = localStorage.getItem('familyCalendarCurrentUser');
     if (savedCurrentUser) {
         return JSON.parse(savedCurrentUser);
     }
-    // If no current user, default to the first user from the list
     const userList = localStorage.getItem('familyCalendarUsers');
     return userList ? JSON.parse(userList)[0] : SEED_USERS[0];
   });
   
-  const [events, setEvents] = useState<CalendarEvent[]>(() => {
+  const [events, setEvents] = useState(() => {
     const savedEvents = localStorage.getItem('familyCalendarEvents');
     if (savedEvents) {
-      // Dates need to be converted back from string to Date objects
-      return JSON.parse(savedEvents).map((event: CalendarEvent) => ({
+      return JSON.parse(savedEvents).map((event) => ({
         ...event,
         date: new Date(event.date),
       }));
@@ -36,7 +34,6 @@ const App: React.FC = () => {
     return SEED_EVENTS.map(e => ({...e, id: crypto.randomUUID()}));
   });
 
-  // Save to localStorage whenever users, currentUser, or events change
   useEffect(() => {
     localStorage.setItem('familyCalendarUsers', JSON.stringify(users));
   }, [users]);
@@ -51,8 +48,8 @@ const App: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [activeFilter, setActiveFilter] = useState<EventType | 'ALL'>('ALL');
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('ALL');
 
   const handlePrevMonth = useCallback(() => {
     setCurrentDate(prevDate => {
@@ -74,7 +71,7 @@ const App: React.FC = () => {
     setCurrentDate(new Date());
   }, []);
 
-  const handleOpenModal = useCallback((date: Date) => {
+  const handleOpenModal = useCallback((date) => {
     setSelectedDate(date);
     setIsModalOpen(true);
   }, []);
@@ -84,9 +81,9 @@ const App: React.FC = () => {
     setSelectedDate(null);
   }, []);
 
-  const handleAddEvent = useCallback((event: Omit<CalendarEvent, 'id' | 'date' | 'createdBy'>) => {
+  const handleAddEvent = useCallback((event) => {
     if (selectedDate) {
-      const newEvent: CalendarEvent = {
+      const newEvent = {
         id: crypto.randomUUID(),
         ...event,
         date: selectedDate,
@@ -97,22 +94,22 @@ const App: React.FC = () => {
     }
   }, [selectedDate, currentUser, handleCloseModal]);
   
-  const handleDeleteEvent = useCallback((eventId: string) => {
+  const handleDeleteEvent = useCallback((eventId) => {
     setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
   }, []);
 
-  const handleFilterChange = useCallback((filter: EventType | 'ALL') => {
+  const handleFilterChange = useCallback((filter) => {
     setActiveFilter(filter);
   }, []);
   
-  const handleUserChange = useCallback((userId: string) => {
+  const handleUserChange = useCallback((userId) => {
     const newCurrentUser = users.find(u => u.id === userId);
     if (newCurrentUser) {
       setCurrentUser(newCurrentUser);
     }
   }, [users]);
 
-  const handleRoleChange = useCallback((userId: string) => {
+  const handleRoleChange = useCallback((userId) => {
     setUsers(prevUsers =>
       prevUsers.map(user =>
         user.id === userId
@@ -134,87 +131,74 @@ const App: React.FC = () => {
       color: EVENT_TYPE_COLORS[type],
     })), []);
 
-  const filterOptions: { label: string; value: EventType | 'ALL' }[] = [
+  const filterOptions = [
     { label: 'All', value: 'ALL' },
     { label: 'Events', value: EventType.EVENT },
     { label: 'Goals', value: EventType.GOAL },
     { label: 'Updates', value: EventType.UPDATE },
   ];
 
-  return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen text-gray-800">
-      <div className="container mx-auto p-4 md:p-8">
-        <Header 
-          currentDate={currentDate} 
-          onPrevMonth={handlePrevMonth} 
-          onNextMonth={handleNextMonth}
-          onToday={handleToday}
-          currentUser={currentUser}
-          users={users}
-          onUserChange={handleUserChange}
-          onOpenUserManagement={() => setIsUserModalOpen(true)}
-        />
-        
-        <div className="flex justify-center my-4 space-x-4">
-          {legendItems.map(item => (
-            <div key={item.type} className="flex items-center space-x-2 text-sm">
-              <span className={`w-4 h-4 rounded-full ${item.color}`}></span>
-              <span className="capitalize">{item.type.toLowerCase()}</span>
-            </div>
-          ))}
-        </div>
-        
-        <div className="flex justify-center mb-4">
-            <div className="flex items-center space-x-1 bg-gray-200/60 p-1 rounded-full shadow-inner">
-                {filterOptions.map(option => (
-                <button
-                    key={option.value}
-                    onClick={() => handleFilterChange(option.value)}
-                    className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out ${
-                    activeFilter === option.value
-                        ? 'bg-white text-indigo-600 shadow-md'
-                        : 'text-gray-600 hover:bg-white/70'
-                    }`}
-                    aria-pressed={activeFilter === option.value}
-                >
-                    {option.label}
-                </button>
-                ))}
-            </div>
-        </div>
-
-        <Calendar 
-          currentDate={currentDate} 
-          events={filteredEvents} 
-          onAddEventClick={handleOpenModal}
-          onDeleteEvent={handleDeleteEvent}
-          currentUser={currentUser}
-          users={users}
-        />
-        
-        {isModalOpen && selectedDate && (
-          <AddEventModal 
-            isOpen={isModalOpen} 
-            onClose={handleCloseModal} 
-            onAddEvent={handleAddEvent}
-            selectedDate={selectedDate}
-          />
-        )}
-        
-        {isUserModalOpen && (
-          <UserManagementModal
-            isOpen={isUserModalOpen}
-            onClose={() => setIsUserModalOpen(false)}
-            users={users}
-            onRoleChange={handleRoleChange}
-            currentUserId={currentUser.id}
-          />
-        )}
-      </div>
-      <footer className="text-center text-sm text-gray-500 pb-4">
-        Family Calendar Hub - Stay Connected & Organized
-      </footer>
-    </div>
+  return React.createElement('div', { className: "bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen text-gray-800" },
+    React.createElement('div', { className: "container mx-auto p-4 md:p-8" },
+      React.createElement(Header, { 
+        currentDate: currentDate, 
+        onPrevMonth: handlePrevMonth, 
+        onNextMonth: handleNextMonth,
+        onToday: handleToday,
+        currentUser: currentUser,
+        users: users,
+        onUserChange: handleUserChange,
+        onOpenUserManagement: () => setIsUserModalOpen(true)
+      }),
+      React.createElement('div', { className: "flex justify-center my-4 space-x-4" },
+        legendItems.map(item => 
+          React.createElement('div', { key: item.type, className: "flex items-center space-x-2 text-sm" },
+            React.createElement('span', { className: `w-4 h-4 rounded-full ${item.color}` }),
+            React.createElement('span', { className: "capitalize" }, item.type.toLowerCase())
+          )
+        )
+      ),
+      React.createElement('div', { className: "flex justify-center mb-4" },
+        React.createElement('div', { className: "flex items-center space-x-1 bg-gray-200/60 p-1 rounded-full shadow-inner" },
+          filterOptions.map(option => 
+            React.createElement('button', {
+              key: option.value,
+              onClick: () => handleFilterChange(option.value),
+              className: `px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out ${
+                activeFilter === option.value
+                  ? 'bg-white text-indigo-600 shadow-md'
+                  : 'text-gray-600 hover:bg-white/70'
+              }`,
+              'aria-pressed': activeFilter === option.value
+            }, option.label)
+          )
+        )
+      ),
+      React.createElement(Calendar, { 
+        currentDate: currentDate, 
+        events: filteredEvents, 
+        onAddEventClick: handleOpenModal,
+        onDeleteEvent: handleDeleteEvent,
+        currentUser: currentUser,
+        users: users
+      }),
+      isModalOpen && selectedDate && React.createElement(AddEventModal, { 
+        isOpen: isModalOpen, 
+        onClose: handleCloseModal, 
+        onAddEvent: handleAddEvent,
+        selectedDate: selectedDate
+      }),
+      isUserModalOpen && React.createElement(UserManagementModal, {
+        isOpen: isUserModalOpen,
+        onClose: () => setIsUserModalOpen(false),
+        users: users,
+        onRoleChange: handleRoleChange,
+        currentUserId: currentUser.id
+      })
+    ),
+    React.createElement('footer', { className: "text-center text-sm text-gray-500 pb-4" },
+      "Family Calendar Hub - Stay Connected & Organized"
+    )
   );
 };
 

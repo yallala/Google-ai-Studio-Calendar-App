@@ -3,16 +3,14 @@ import { GoogleGenAI, Type } from "@google/genai";
 const API_KEY = process.env.API_KEY;
 
 if (!API_KEY) {
-  // This is a fallback for development and will show a console warning.
-  // In a real production environment, the key should be securely managed.
   console.warn("API_KEY is not set in environment variables. Gemini features will not work.");
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
+// Fix: Added explicit return type to ensure the result is correctly typed as a string.
 export const generateEventIdea = async (): Promise<string> => {
   if (!API_KEY) {
-    // Simulate a successful response for UI development if no API key is present
     return new Promise(resolve => setTimeout(() => resolve(JSON.stringify({
         title: "Family Game Night",
         description: "Dust off the board games for a night of friendly competition."
@@ -56,7 +54,6 @@ export const generateEventIdea = async (): Promise<string> => {
 
     const text = response.text.trim();
     
-    // Basic validation to ensure the response is JSON
     JSON.parse(text);
     
     return text;
